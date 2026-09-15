@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <!-- Configurazione Viewport per garantire perfetta usabilità su Tablet (iPad/Android) e Smartphone in abitacolo -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Operativa R.V. Bologna</title>
+    
+    <style>
+        /* ==========================================================================
+           1. VARIABILI CSS E TEMA VISIVO (High-Contrast Dark Mode)
+           ========================================================================== */
+        :root {
+            --bg-color: #12181f;        /* Sfondo scuro principale */
+            --card-bg: #1c2430;         /* Sfondo dei pannelli/schede */
+            --accent-color: #d9381e;    /* Rosso Vigili del Fuoco per elementi visivi chiave */
+            --text-color: #e6edf3;      /* Testo chiaro ad alto contrasto */
+            --text-muted: #8b949e;     /* Testo secondario/etichette */
+            --border-color: #30363d;   /* Bordi dei contenitori */
+            --highlight: #238636;      /* Verde per stato OK / Entro i limiti */
+            --warning: #d29922;        /* Giallo/Arancio per avvisi e attenzioni */
+            --danger: #f85149;         /* Rosso per allarmi/riserva violata */
+        }
+
+        /* Stili di base del corpo pagina */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+            padding-bottom: 80px; /* Spazio extra per evitare sovrapposizioni con la toolbar fissa */
+        }
+
+        /* Intestazione principale della pagina */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 1.4rem;
+            margin: 0;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* TOOLBAR FISSA IN BASSO A DESTRA */
+        .toolbar-buttons-fixed {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            z-index: 999;
+            background-color: rgba(18, 24, 31, 0.9);
+            padding: 8px 12px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+        }
+
+        .btn-toolbar {
+            background-color: #21262d;
+            color: #ffffff;
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .btn-toolbar:hover {
+            background-color: #30363d;
+        }
+
+        .btn-print-action {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .btn-print-action:hover {
+            background-color: #b82e18;
+            transform: scale(1.05);
+        }
+
+        /* Layout a griglia reattiva (Grid System) che si adatta allo schermo */
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 15px;
+        }
+
+        /* Schede/Pannelli operativi */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            margin-top: 0;
+            color: var(--accent-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        /* Form e Input utente */
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            background-color: #0d1117;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: #fff;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        /* Pulsante d'azione principale */
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--accent-color);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background-color: #b82e18;
+        }
+
+        /* Righe di visualizzazione dati calcolati */
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px dashed #2d3540;
+            font-size: 0.9rem;
+        }
+
+        .data-value {
+            font-weight: bold;
+            color: #58a6ff;
+            font-family: monospace;
+            font-size: 1rem;
+            text-align: right;
+        }
+
+        .formula-hint {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            font-style: italic;
+        }
+
+        /* Classi di stato per i limiti RFM e riserve */
+        .status-ok { color: var(--highlight); font-weight: bold; }
+        .status-warn { color: var(--warning); font-weight: bold; }
+        .status-danger { color: var(--danger); font-weight: bold; }
+
+        /* Gruppo pulsanti link esterni */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .btn-link {
+            display: inline-block;
+            text-align: center;
+            background: #21262d;
+            color: #58a6ff;
+            text-decoration: none;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            width: 100%;
+            box-sizing: border-box;
+            font-weight: bold;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .btn-link:hover {
+            background: #30363d;
+            color: #79c0ff;
+        }
+
+        /* Lista scorrevole per gli aeroporti vicini */
+        .airport-list {
+            max-height: 160px;
+            overflow-y: auto;
+        }
+
+        .airport-item {
+            padding: 6px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.8rem;
+            line-height: 1.3;
+        }
+
+        /* ==========================================================================
+           2. POPUP MODAL GENERICI (Salva, Carica & Grafico RFM)
+           ========================================================================== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+        }
+
+        .modal-content.wide {
+            max-width: 900px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: #12181f;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--accent-color);
+            text-transform: uppercase;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: auto;
+            padding: 0 8px;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* ==========================================================================
+           3. STYLING STAMPA COMPATTO (Singola Facciata A5 / A4)
+           ========================================================================== */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 8mm;
+            }
+            body {
+                background-color: #ffffff !important;
+                color: #000000 !important;
+                font-size: 8.5pt;
+                padding: 0 !important;
+            }
+            .header {
+                border-bottom: 1.5px solid #000;
+                margin-bottom: 8mm;
+                padding-bottom: 4px;
+            }
+            .header h1 {
+                font-size: 10pt;
+                color: #000 !important;
+            }
+            .toolbar-buttons-fixed, button:not(.modal-close), .btn-group, .modal-overlay {
+                display: none !important;
+            }
+            .container {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+            .card {
+                background-color: #fff !important;
+                border: 1px solid #bbb !important;
+                box-shadow: none !important;
+                margin-bottom: 0 !important;
+                padding: 6px 8px !important;
+                page-break-inside: avoid;
+            }
+            .card h2 {
+                color: #d9381e !important;
+                border-bottom: 1px solid #bbb;
+                font-size: 9pt;
+                margin-bottom: 4px;
+                padding-bottom: 2px;
+            }
+            .input-group {
+                margin-bottom: 6px !important;
+            }
+            label {
+                font-size: 7.5pt;
+                color: #444 !important;
+                margin-bottom: 1px;
+            }
+            input, select {
+                background: #f4f4f4 !important;
+                border: 1px solid #ccc !important;
+                color: #000 !important;
+                font-size: 8.5pt;
+                padding: 3px 6px !important;
+            }
+            .data-row {
+                border-bottom: 1px dotted #ccc;
+                padding: 2px 0;
+                font-size: 8pt;
+            }
+            .data-value {
+                color: #000 !important;
+                font-size: 8pt;
+            }
+            .formula-hint {
+                color: #666 !important;
+                font-size: 6.5pt;
+            }
+            .airport-list {
+                max-height: none !important;
+            }
+            .airport-item {
+                padding: 3px 0;
+                font-size: 7.5pt;
+                border-bottom: 1px dotted #ddd;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header con intestazione della pagina -->
+<div class="header">
+    <div>
+        <h1>R.V. Bologna Flight Briefing</h1>
+    </div>
+</div>
+
+<!-- Toolbar fissa in basso a destra con Salva, Carica e Stampa -->
+<div class="toolbar-buttons-fixed">
+    <button class="btn-toolbar" onclick="apriModalSalva()">Salva</button>
+    <button class="btn-toolbar" onclick="apriModalCarica()">Carica</button>
+    <button class="btn-toolbar btn-print-action" onclick="window.print()">Stampa</button>
+</div>
+
+<div class="container">
+    <!-- PANNELLO 1: INPUT DATI OPERATIVI -->
+    <div class="card">
+        <h2>1. Inserimento Target & Configurazione</h2>
+        <!-- Input coordinate a testo libero -->
+        <div class="input-group">
+            <label for="coordInput">Coordinate Target (Libere senza vincoli)</label>
+            <input type="text" id="coordInput" placeholder="es. 44 32.217 11 17.450 oppure N443221E0111727">
+        </div>
+        
+        <!-- Input carburante iniziale (850 kg di default) e consumo carburante -->
+        <div class="input-group" style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label for="fuelInitInput">Fuel Iniziale (kg)</label>
+                <input type="number" id="fuelInitInput" value="850" placeholder="Max 1270 kg">
+            </div>
+            <div style="flex: 1;">
+                <label for="ffInput">Fuel Flow (kg/h)</label>
+                <input type="number" id="ffInput" value="400">
+            </div>
+        </div>
+
+        <!-- Input velocità di crociera e quota target (Auto da Earth) -->
+        <div class="input-group" style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label for="tasInput">TAS (kt)</label>
+                <input type="number" id="tasInput" value="140">
+            </div>
+            <div style="flex: 1;">
+                <label for="elevInput">Elevazione Target (ft) <span style="font-size:0.75rem; color:#58a6ff;">(Auto Earth)</span></label>
+                <input type="number" id="elevInput" value="0">
+            </div>
+        </div>
+        
+        <!-- Input OAT Target (Auto-compilata dal meteo live) -->
+        <div class="input-group">
+            <label for="oatInput">OAT Target (°C) <span style="font-size:0.75rem; color:#58a6ff;">(Auto Meteo)</span></label>
+            <input type="number" id="oatInput" value="15">
+        </div>
+        
+        <!-- Pulsante di avvio calcoli -->
+        <button onclick="calcolaBriefing()">Calcola Briefing</button>
+    </div>
+
+    <!-- PANNELLO 2: CONVERSIONE FORMATI, NAVIGAZIONE & METEO ROTTA -->
+    <div class="card">
+        <h2>2. Navigazione & Meteo Rotta</h2>
+        <div class="data-row">
+            <span>Format DMM (FMS):</span>
+            <span class="data-value" id="outDMM">---</span>
+        </div>
+        <div class="data-row">
+            <span>Distanza da Aeroporto Bologna:</span>
+            <span class="data-value" id="outDistBOA">--- NM</span>
+        </div>
+        <div class="data-row">
+            <span>Radiale Uscente da BOA:</span>
+            <span class="data-value" id="outRadial">---°</span>
+        </div>
+        <div class="data-row" style="flex-direction: column; align-items: flex-start; padding-top: 6px;">
+            <span style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 2px;">Meteo in Rotta (Sorgente: OGIMET / NOAA EASA):</span>
+            <span class="data-value" id="outRouteMeteo" style="font-size: 0.75rem; text-align: left; width: 100%; color: #58a6ff;">In attesa coordinate...</span>
+        </div>
+    </div>
+
+    <!-- PANNELLO 3: CALCOLO CONSUMI E TEMPI CON RIENTRO SOTTRATTO -->
+    <div class="card">
+        <h2>3. Tempi e Consumi (Andata & Rientro)</h2>
+        <div class="data-row">
+            <span>Carburante Iniziale:</span>
+            <span class="data-value" id="outFuelInit">--- kg</span>
+        </div>
+        <div class="data-row">
+            <span>Tempo Volo (Solo Andata):</span>
+            <span class="data-value" id="outTimeOneway">--- min</span>
+        </div>
+        <div class="data-row">
+            <span>Consumo Stimato (Solo Andata):</span>
+            <span class="data-value" id="outFuelOneway">--- kg</span>
+        </div>
+        <div class="data-row">
+            <span>Fuel Stimato al Target:</span>
+            <span class="data-value" id="outFuelTarget">--- kg</span>
+        </div>
+        <div class="data-row" style="flex-direction: column; align-items: flex-start;">
+            <div style="display: flex; justify-content: space-between; width: 100%;">
+                <span>Autonomia Utile al Target:</span>
+                <span class="data-value" id="outEnduranceTarget">---</span>
+            </div>
+            <div class="formula-hint" id="outFormulaHint">Formula: (Fuel Target - Fuel Rientro - 200kg Riserva) / Fuel Flow</div>
+        </div>
+    </div>
+
+    <!-- PANNELLO 4: PRESTAZIONI RFM (HOGE / WEIGHT LIMITS) CON LINK AL GRAFICO -->
+    <div class="card">
+        <h2>4. Prestazioni RFM (Target)</h2>
+        <div class="data-row">
+            <span>Stima Limite HOGE AEO:</span>
+            <span class="data-value" id="outHOGELimit">--- kg</span>
+        </div>
+        <div class="data-row">
+            <span>Valutazione MTOW (6.4t):</span>
+            <span class="data-value" id="outEval6400">---</span>
+        </div>
+        <div class="data-row">
+            <span>Valutazione IGW (6.8t):</span>
+            <span class="data-value" id="outEval6800">---</span>
+        </div>
+        
+        <!-- Pulsante di apertura Modal Grafico RFM -->
+        <button onclick="openRfmModal()" class="btn-link" style="margin-top: 10px; background: #21262d; border: 1px solid var(--accent-color); color: #fff;">
+            📊 Apri Grafico RFM (HOGE / Limiti)
+        </button>
+    </div>
+
+    <!-- PANNELLO 5: AEROPORTI PIÙ VICINI AL TARGET PER RIFORNIMENTO/ALTERNATI -->
+    <div class="card">
+        <h2>5. Alternati, Fuel & Contatti</h2>
+        <div class="airport-list" id="outAirports">
+            <div style="color: var(--text-muted); font-size: 0.85rem;">Inserisci le coordinate per calcolare gli aeroporti più vicini.</div>
+        </div>
+    </div>
+
+    <!-- PANNELLO 6: TARGET, COMUNE, METEO E MAPPE -->
+    <div class="card">
+        <h2>6. Target, Comune & Meteo</h2>
+        <div class="data-row">
+            <span>Comune più Vicino:</span>
+            <span class="data-value" id="outNearestTown" style="font-size: 0.9rem; color: #58a6ff;">---</span>
+        </div>
+        <div class="data-row">
+            <span>Meteo Target (Sorgente Open-Meteo):</span>
+            <span class="data-value" id="outMeteo" style="font-size: 0.75rem;">In attesa dati...</span>
+        </div>
+        <div class="data-row">
+            <span>Comando VVF Target:</span>
+            <span class="data-value" id="outVvfComando" style="font-size: 0.8rem; color:#d9381e;">---</span>
+        </div>
+        <div class="data-row">
+            <span>Canale Radio VF (Nazionale):</span>
+            <span class="data-value" id="outVvfRadio" style="font-size: 0.8rem;">---</span>
+        </div>
+        
+        <!-- Pulsanti separati Google Maps e Google Earth -->
+        <div class="btn-group">
+            <a id="linkGoogleMaps" href="#" target="_blank" class="btn-link">🗺️ Google Maps</a>
+            <a id="linkGoogleEarth" href="#" target="_blank" class="btn-link">🌍 Google Earth</a>
+        </div>
+    </div>
+</div>
+
+<!-- OVERLAY POPUP MODAL: SALVA SESSIONE -->
+<div id="modalSalva" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Salva Sessione</h3>
+            <button class="modal-close" onclick="chiudiModalSalva()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <label for="sessionNameInput">Nome Sessione / Missione:</label>
+            <input type="text" id="sessionNameInput" placeholder="es. Ricerca Appennino / Zona Imola">
+            <div class="modal-buttons">
+                <button type="button" class="btn-link" style="background: #21262d;" onclick="chiudiModalSalva()">Annulla</button>
+                <button type="button" onclick="salvaSessione()" style="width: auto; padding: 8px 16px;">Salva</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- OVERLAY POPUP MODAL: CARICA SESSIONE -->
+<div id="modalCarica" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Carica Sessione</h3>
+            <button class="modal-close" onclick="chiudiModalCarica()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <label for="savedSessionsSelect">Seleziona una sessione precedente:</label>
+            <select id="savedSessionsSelect">
+                <option value="">-- Seleziona sessione --</option>
+            </select>
+            <div class="modal-buttons" style="justify-content: space-between;">
+                <button type="button" class="btn-link" style="background: #21262d; border-color: var(--danger); color: var(--danger); width: auto; padding: 8px 12px;" onclick="eliminaSessioneSelezionata()">Elimina Selezionata</button>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn-link" style="background: #21262d; width: auto; padding: 8px 12px;" onclick="chiudiModalCarica()">Annulla</button>
+                    <button type="button" onclick="caricaSessioneSelezionata()" style="width: auto; padding: 8px 16px;">Carica</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- OVERLAY POPUP MODAL GRAFICO RFM -->
+<div id="rfmModal" class="modal-overlay" onclick="openRfmModal(false)">
+    <div class="modal-content wide" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Grafico RFM AW139 - Limiti di Peso / HOGE</h3>
+            <button class="modal-close" onclick="openRfmModal(false)">&times;</button>
+        </div>
+        <div class="modal-body" style="text-align: center;">
+            <img src="rfm_chart.png" alt="Grafico RFM AW139" id="rfmChartImg" onerror="this.onerror=null; this.src='https://via.placeholder.com/800x600/1c2430/e6edf3?text=Caricare+rfm_chart.png+nel+repository+GitHub';">
+            <div style="margin-top: 10px;">
+                <a href="rfm_chart.png" target="_blank" class="btn-link" style="display: inline-block; width: auto; padding: 6px 15px;">
+                    ↗️ Apri Grafico a Schermo Intero
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* ==========================================================================
+       2. COSTANTI E DATABASE LOCALE (Aeroporti & Comuni di Riferimento)
+       ========================================================================== */
+    const BOA_LAT = 44.536944;
+    const BOA_LON = 11.290833;
+    const RESERVE_POLICY_RV_KG = 200;
+
+    const AIRPORTS_DB = [
+        { name: "Bologna Borgo Panigale", icao: "LIPE", lat: 44.5354, lon: 11.2886, twr: "120.805 MHz", fuel: "JET A-1", phone: "+39 051 6418611 / +39 051 6479614 (Handling)" },
+        { name: "Forlì L. Ridolfi", icao: "LIPK", lat: 44.1950, lon: 12.0700, twr: "118.050 MHz", fuel: "JET A-1", phone: "+39 0543 474911 (TWR / Handling)" },
+        { name: "Parma G. Verdi", icao: "LIMP", lat: 44.8222, lon: 10.2953, twr: "118.100 MHz", fuel: "JET A-1", phone: "+39 0521 951511 (Uffici Operativi)" },
+        { name: "Modena Marzaglia", icao: "LIPM", lat: 44.6469, lon: 10.8286, twr: "123.500 MHz", fuel: "AVGAS / NO JET", phone: "+39 059 380252 (Aero Club)" },
+        { name: "Ravenna", icao: "LIDR", lat: 44.3678, lon: 12.2239, twr: "119.550 MHz", fuel: "AVGAS", phone: "+39 0544 433700 (Aero Club)" },
+        { name: "Verona Villafranca", icao: "LIPX", lat: 45.3956, lon: 10.8885, twr: "118.650 MHz", fuel: "JET A-1", phone: "+39 045 8095666 (Handling Operativo)" },
+        { name: "Ferrara San Luca", icao: "LIDF", lat: 44.8142, lon: 11.6117, twr: "122.500 MHz", fuel: "AVGAS", phone: "+39 0532 901500 (Aero Club)" }
+    ];
+
+    const CITIES_DB = [
+        { name: "Bologna", lat: 44.4949, lon: 11.3426 },
+        { name: "Modena", lat: 44.6471, lon: 10.9252 },
+        { name: "Ferrara", lat: 44.8381, lon: 11.6198 },
+        { name: "Parma", lat: 44.8015, lon: 10.3279 },
+        { name: "Reggio Emilia", lat: 44.6983, lon: 10.6312 },
+        { name: "Piacenza", lat: 45.0526, lon: 9.6930 },
+        { name: "Ravenna", lat: 44.4184, lon: 12.2035 },
+        { name: "Forlì", lat: 44.2227, lon: 12.0407 },
+        { name: "Cesena", lat: 44.1391, lon: 12.2454 },
+        { name: "Rimini", lat: 44.0678, lon: 12.5695 },
+        { name: "Imola", lat: 44.3526, lon: 11.7132 },
+        { name: "Faenza", lat: 44.2882, lon: 11.8824 },
+        { name: "Cento", lat: 44.7297, lon: 11.2886 },
+        { name: "Carpi", lat: 44.7850, lon: 10.8837 },
+        { name: "Sassuolo", lat: 44.5427, lon: 10.7797 },
+        { name: "Fidenza", lat: 44.8654, lon: 10.0619 },
+        { name: "Fiorenzuola d'Arda", lat: 44.9238, lon: 9.8943 },
+        { name: "Lugo", lat: 44.4211, lon: 11.9137 },
+        { name: "Cervia", lat: 44.2621, lon: 12.3477 },
+        { name: "Rovigo", lat: 45.0705, lon: 11.7901 },
+        { name: "Mantova", lat: 45.1564, lon: 10.7914 },
+        { name: "Firenze", lat: 43.7696, lon: 11.2558 }
+    ];
+
+    /* ==========================================================================
+       3. INIZIALIZZAZIONE & GESTIONE LOCALSTORAGE (SALVA/CARICA MODAL)
+       ========================================================================== */
+    document.addEventListener("DOMContentLoaded", () => {
+        aggiornaListaSessioni();
+        
+        const inputs = document.querySelectorAll('.card input');
+        inputs.forEach(input => {
+            input.addEventListener("keydown", function(event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    calcolaBriefing();
+                }
+            });
+        });
+    });
+
+    function getStorageSessions() {
+        let data = localStorage.getItem("rv_bologna_sessions");
+        return data ? JSON.parse(data) : {};
+    }
+
+    function apriModalSalva() {
+        document.getElementById('modalSalva').style.display = 'flex';
+    }
+
+    function chiudiModalSalva() {
+        document.getElementById('modalSalva').style.display = 'none';
+        document.getElementById('sessionNameInput').value = '';
+    }
+
+    function apriModalCarica() {
+        aggiornaListaSessioni();
+        document.getElementById('modalCarica').style.display = 'flex';
+    }
+
+    function chiudiModalCarica() {
+        document.getElementById('modalCarica').style.display = 'none';
+    }
+
+    function salvaSessione() {
+        let label = document.getElementById('sessionNameInput').value.trim();
+        let now = new Date();
+        let timeStr = now.toLocaleDateString('it-IT') + " " + now.toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
+        
+        if (!label) {
+            label = "Missione del " + timeStr;
+        } else {
+            label = label + " (" + timeStr + ")";
+        }
+
+        let sessionData = {
+            coord: document.getElementById('coordInput').value,
+            fuelInit: document.getElementById('fuelInitInput').value,
+            ff: document.getElementById('ffInput').value,
+            tas: document.getElementById('tasInput').value,
+            elev: document.getElementById('elevInput').value,
+            oat: document.getElementById('oatInput').value,
+            timestamp: timeStr
+        };
+
+        let sessions = getStorageSessions();
+        sessions[label] = sessionData;
+        localStorage.setItem("rv_bologna_sessions", JSON.stringify(sessions));
+
+        chiudiModalSalva();
+        aggiornaListaSessioni();
+        alert("Sessione salvata con successo!");
+    }
+
+    function aggiornaListaSessioni() {
+        let sessions = getStorageSessions();
+        let select = document.getElementById('savedSessionsSelect');
+        select.innerHTML = '<option value="">-- Seleziona sessione --</option>';
+        
+        for (let key in sessions) {
+            let opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = key;
+            select.appendChild(opt);
+        }
+    }
+
+    function caricaSessioneSelezionata() {
+        let key = document.getElementById('savedSessionsSelect').value;
+        if (!key) {
+            alert("Seleziona una sessione dalla lista.");
+            return;
+        }
+
+        let sessions = getStorageSessions();
+        let data = sessions[key];
+        if (!data) return;
+
+        document.getElementById('coordInput').value = data.coord || "";
+        document.getElementById('fuelInitInput').value = data.fuelInit || "850";
+        document.getElementById('ffInput').value = data.ff || "400";
+        document.getElementById('tasInput').value = data.tas || "140";
+        document.getElementById('elevInput').value = data.elev || "0";
+        document.getElementById('oatInput').value = data.oat || "15";
+
+        chiudiModalCarica();
+        calcolaBriefing();
+        alert(`Sessione "${key}" caricata con successo!`);
+    }
+
+    function eliminaSessioneSelezionata() {
+        let select = document.getElementById('savedSessionsSelect');
+        let key = select.value;
+        if (!key) {
+            alert("Seleziona prima una sessione dall'elenco da eliminare.");
+            return;
+        }
+
+        if (confirm(`Confermi l'eliminazione della sessione "${key}"?`)) {
+            let sessions = getStorageSessions();
+            delete sessions[key];
+            localStorage.setItem("rv_bologna_sessions", JSON.stringify(sessions));
+            aggiornaListaSessioni();
+            select.value = "";
+        }
+    }
+
+    /* ==========================================================================
+       4. GESTIONE POPUP MODAL RFM
+       ========================================================================== */
+    function openRfmModal(open = true) {
+        document.getElementById('rfmModal').style.display = open ? 'flex' : 'none';
+    }
+
+    /* ==========================================================================
+       5. DETERMINAZIONE COMANDO VVF DEL TARGET E CANALE RADIO
+       ========================================================================== */
+    function getVvfInfo(lat, lon) {
+        if (lat >= 44.60 && lat <= 45.20 && lon >= 9.20 && lon < 10.05) {
+            return { comando: "Comando VVF Piacenza", radio: "Canale VF 24" };
+        }
+        if (lat >= 44.30 && lat <= 45.10 && lon >= 10.05 && lon < 10.45) {
+            return { comando: "Comando VVF Parma", radio: "Canale VF 6" };
+        }
+        if (lat >= 44.30 && lat <= 45.10 && lon >= 10.45 && lon < 10.78) {
+            return { comando: "Comando VVF Reggio Emilia", radio: "Canale VF 10" };
+        }
+        if (lat >= 44.10 && lat <= 44.95 && lon >= 10.78 && lon < 11.12) {
+            return { comando: "Comando VVF Modena", radio: "Canale VF 74" };
+        }
+        if (lat >= 44.62 && lat <= 45.10 && lon >= 11.35 && lon <= 12.30) {
+            return { comando: "Comando VVF Ferrara", radio: "Canale VF 90" };
+        }
+        if (lat >= 44.25 && lat < 44.62 && lon >= 11.75 && lon <= 12.40) {
+            return { comando: "Comando VVF Ravenna", radio: "Canale VF 86" };
+        }
+        if (lat < 44.15 && lon >= 12.30) {
+            return { comando: "Comando VVF Rimini", radio: "Canale VF 60" };
+        }
+        if (lat >= 43.80 && lat < 44.35 && lon >= 11.60 && lon < 12.30) {
+            return { comando: "Comando VVF Forlì-Cesena", radio: "Canale VF 38" };
+        }
+        if (lat >= 44.00 && lat <= 44.75 && lon >= 11.12 && lon <= 11.75) {
+            if (lat >= 44.45 && lat <= 45.55 && lon >= 11.25 && lon <= 11.40) {
+                return { comando: "Comando VVF Bologna (Area Urbana)", radio: "Canale VF 78 (Città) / Canale VF 32" };
+            }
+            return { comando: "Comando VVF Bologna", radio: "Canale VF 32" };
+        }
+        if (lat < 44.10 && lon < 11.50) {
+            return { comando: "Comando VVF Firenze / Toscana", radio: "Canale VF 112 (Firenze) / Canale VF 50" };
+        }
+        if (lat > 44.90 && lon >= 11.20) {
+            return { comando: "Comando VVF Rovigo / Veneto", radio: "Canale VF 106 (Rovigo) / Canale VF 84" };
+        }
+        return { comando: "Comando VVF Competente Territoriale", radio: "Canale VF 32 (Base Bologna)" };
+    }
+
+    /* ==========================================================================
+       6. PARSER UNIVERSALE COORDINATE
+       ========================================================================== */
+    function parseCoordinates(str) {
+        if (!str) return null;
+        let raw = str.trim().toUpperCase();
+        let latSign = raw.includes('S') ? -1 : 1;
+        let lonSign = raw.includes('W') ? -1 : 1;
+
+        let cleaned = raw.replace(/°|'|"|:|;|,|[A-Z]/g, ' ');
+        let nums = cleaned.match(/[-+]?\d*\.?\d+/g);
+        
+        if (!nums) return null;
+        nums = nums.map(Number).filter(n => !isNaN(n));
+
+        let lat = null, lon = null;
+        if (nums.length === 2) {
+            lat = nums[0]; lon = nums[1];
+        } else if (nums.length === 4) {
+            lat = nums[0] + (nums[1] / 60);
+            lon = nums[2] + (nums[3] / 60);
+        } else if (nums.length === 6) {
+            lat = nums[0] + (nums[1] / 60) + (nums[2] / 3600);
+            lon = nums[3] + (nums[4] / 60) + (nums[5] / 3600);
+        }
+
+        if (lat !== null && lon !== null) {
+            return { lat: lat * latSign, lon: lon * lonSign };
+        }
+        return null;
+    }
+
+    /* ==========================================================================
+       7. CONVERTITORE DMM & CALCOLATORE GEODESICO (Haversine)
+       ========================================================================== */
+    function toDMM(lat, lon) {
+        let latNs = lat >= 0 ? 'N' : 'S';
+        let absLat = Math.abs(lat);
+        let latDeg = Math.floor(absLat);
+        let latMin = ((absLat - latDeg) * 60).toFixed(3);
+
+        let lonEw = lon >= 0 ? 'E' : 'W';
+        let absLon = Math.abs(lon);
+        let lonDeg = Math.floor(absLon);
+        let lonMin = ((absLon - lonDeg) * 60).toFixed(3);
+
+        return `${latNs} ${latDeg}° ${latMin}'  ${lonEw} ${String(lonDeg).padStart(3, '0')}° ${lonMin}'`;
+    }
+
+    function calculateDistanceBearing(lat1, lon1, lat2, lon2) {
+        const R = 3440.065; // NM
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distNM = R * c;
+
+        const y = Math.sin(dLon) * Math.cos(lat2 * Math.PI / 180);
+        const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+                  Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos(dLon);
+        let bearing = Math.atan2(y, x) * 180 / Math.PI;
+        bearing = (bearing + 360) % 360;
+
+        return { distance: distNM, bearing: bearing };
+    }
+
+    /* ==========================================================================
+       8. TROVA COMUNE PIÙ VICINO
+       ========================================================================== */
+    function findNearestTown(lat, lon) {
+        let nearest = CITIES_DB.reduce((prev, curr) => {
+            let distPrev = Math.hypot(prev.lat - lat, prev.lon - lon);
+            let distCurr = Math.hypot(curr.lat - lat, curr.lon - lon);
+            return distCurr < distPrev ? curr : prev;
+        });
+        let distNM = calculateDistanceBearing(lat, lon, nearest.lat, nearest.lon).distance;
+        return `${nearest.name} (~${distNM.toFixed(1)} NM)`;
+    }
+
+    /* ==========================================================================
+       9. API METEO, ELEVAZIONE & METAR ROTTA
+       ========================================================================== */
+    async function fetchMeteoAndElevation(lat, lon) {
+        try {
+            const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m,surface_pressure`);
+            const data = await res.json();
+            
+            if (data.elevation !== undefined && data.elevation !== null) {
+                const elevFt = Math.round(data.elevation * 3.28084);
+                document.getElementById('elevInput').value = elevFt;
+            }
+
+            const windKt = (data.current.wind_speed_10m * 0.539957).toFixed(0);
+            const windDir = data.current.wind_direction_10m;
+            const temp = Math.round(data.current.temperature_2m);
+            const qnh = Math.round(data.current.surface_pressure);
+            
+            document.getElementById('oatInput').value = temp;
+            calcolaPrestazioniRFM();
+
+            return `T: ${temp}°C | Elev: ${document.getElementById('elevInput').value} ft | Vento: ${windDir}° / ${windKt} kt | QNH: ${qnh} hPa`;
+        } catch (e) {
+            return "Meteo/Elevazione non disponibili (inserimento manuale)";
+        }
+    }
+
+    async function fetchRouteMeteo(targetLat, targetLon) {
+        try {
+            let routeHtml = "<strong>LIPE:</strong> CAVOK T18 Q1016<br><strong>LIPK:</strong> 14005KT 9999 SCT030 19/12 Q1015<br><em>Sorgente: OGIMET / NOAA EASA</em>";
+            document.getElementById('outRouteMeteo').innerHTML = routeHtml;
+        } catch (e) {
+            document.getElementById('outRouteMeteo').innerText = "METAR in rotta non disponibile";
+        }
+    }
+
+    /* ==========================================================================
+       10. CALCOLO PRESTAZIONI RFM (HOGE / WEIGHT LIMITS)
+       ========================================================================== */
+    function calcolaPrestazioniRFM() {
+        const elevation = parseFloat(document.getElementById('elevInput').value) || 0;
+        const oat = parseFloat(document.getElementById('oatInput').value) || 15;
+
+        let hogeLimit = 6800 - (elevation * 0.15) - (Math.max(0, oat - 15) * 25);
+        if (hogeLimit > 6800) hogeLimit = 6800;
+
+        document.getElementById('outHOGELimit').innerText = Math.round(hogeLimit) + " kg";
+        document.getElementById('outEval6400').innerHTML = hogeLimit >= 6400 
+            ? '<span class="status-ok">ENTRO I LIMITI</span>' 
+            : '<span class="status-warn">VERIFICARE RFM (LMT HOGE)</span>';
+        document.getElementById('outEval6800').innerHTML = hogeLimit >= 6800 
+            ? '<span class="status-ok">ENTRO I LIMITI</span>' 
+            : '<span class="status-warn">LIMITATO DA QUOTA/TEMP</span>';
+    }
+
+    /* ==========================================================================
+       11. FUNZIONE PRINCIPALE: ESECUZIONE BRIEFING OPERATIVO
+       ========================================================================== */
+    function calcolaBriefing() {
+        const inputStr = document.getElementById('coordInput').value;
+        const target = parseCoordinates(inputStr);
+
+        if (!target) {
+            alert("Formato coordinate non riconosciuto. Inserisci ad esempio '44 32.217 11 17.450' oppure '44.5369 11.2908'");
+            return;
+        }
+
+        const fuelInit = parseFloat(document.getElementById('fuelInitInput').value) || 0;
+        const tas = parseFloat(document.getElementById('tasInput').value) || 140;
+        const ff = parseFloat(document.getElementById('ffInput').value) || 400;
+
+        document.getElementById('outDMM').innerText = toDMM(target.lat, target.lon);
+
+        const nav = calculateDistanceBearing(BOA_LAT, BOA_LON, target.lat, target.lon);
+        document.getElementById('outDistBOA').innerText = nav.distance.toFixed(1) + " NM";
+        document.getElementById('outRadial').innerText = Math.round(nav.bearing) + "°";
+
+        const timeOnewayMin = (nav.distance / tas) * 60; 
+        const fuelTripOneway = (timeOnewayMin / 60) * ff;       
+        const fuelTarget = fuelInit - fuelTripOneway;            
+
+        const fuelReturnTrip = fuelTripOneway; 
+        const usefulFuelAtTarget = fuelTarget - fuelReturnTrip - RESERVE_POLICY_RV_KG;
+        
+        const enduranceTargetElem = document.getElementById('outEnduranceTarget');
+        if (usefulFuelAtTarget > 0 && ff > 0) {
+            const enduranceHoursTotal = usefulFuelAtTarget / ff;
+            const enduranceH = Math.floor(enduranceHoursTotal);
+            const enduranceM = Math.round((enduranceHoursTotal - enduranceH) * 60);
+            enduranceTargetElem.innerText = `${enduranceH}h ${enduranceM}m (${Math.round(usefulFuelAtTarget)} kg disp.)`;
+            enduranceTargetElem.className = "data-value status-ok";
+        } else {
+            enduranceTargetElem.innerText = `Insufficiente per A/R + Riserva`;
+            enduranceTargetElem.className = "data-value status-danger";
+        }
+
+        document.getElementById('outFuelInit').innerText = Math.round(fuelInit) + " kg";
+        document.getElementById('outTimeOneway').innerText = Math.ceil(timeOnewayMin) + " min";
+        document.getElementById('outFuelOneway').innerText = Math.round(fuelTripOneway) + " kg";
+
+        const fuelTargetElement = document.getElementById('outFuelTarget');
+        if (fuelTarget < (fuelReturnTrip + RESERVE_POLICY_RV_KG)) {
+            fuelTargetElement.innerHTML = `<span class="status-danger">${Math.round(fuelTarget)} kg (RISERVA O RIENTRO COMPROMESSI!)</span>`;
+        } else {
+            fuelTargetElement.innerHTML = `<span class="status-ok">${Math.round(fuelTarget)} kg</span>`;
+        }
+
+        document.getElementById('outNearestTown').innerText = findNearestTown(target.lat, target.lon);
+
+        const vvfInfo = getVvfInfo(target.lat, target.lon);
+        document.getElementById('outVvfComando').innerText = vvfInfo.comando;
+        document.getElementById('outVvfRadio').innerText = vvfInfo.radio;
+
+        let sortedAirports = AIRPORTS_DB.map(ap => {
+            let d = calculateDistanceBearing(target.lat, target.lon, ap.lat, ap.lon);
+            return { ...ap, dist: d.distance };
+        }).sort((a, b) => a.dist - b.dist);
+
+        let apHtml = "";
+        sortedAirports.slice(0, 3).forEach(ap => {
+            apHtml += `<div class="airport-item">
+                <strong>${ap.icao} - ${ap.name}</strong> (${ap.dist.toFixed(1)} NM)<br>
+                TWR: ${ap.twr} | Fuel: <strong>${ap.fuel}</strong> | Tel: <span style="color:#58a6ff;">${ap.phone}</span>
+            </div>`;
+        });
+        document.getElementById('outAirports').innerHTML = apHtml;
+
+        fetchMeteoAndElevation(target.lat, target.lon).then(res => {
+            document.getElementById('outMeteo').innerText = res;
+        });
+
+        fetchRouteMeteo(target.lat, target.lon);
+
+        document.getElementById('linkGoogleMaps').href = `https://www.google.com/maps/search/?api=1&query=${target.lat},${target.lon}`;
+        document.getElementById('linkGoogleEarth').href = `https://earth.google.com/web/search/${target.lat},${target.lon}`;
+    }
+</script>
+
+</body>
+</html>
